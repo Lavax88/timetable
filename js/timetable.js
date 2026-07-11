@@ -87,12 +87,23 @@ async function initTimetableApp() {
     };
 
     // --- EVENT CARD GENERATOR ---
+    function subjectAccent(subjectName) {
+      if (!subjectName) return null;
+      for (const details of Object.values(SUBJECTS)) {
+        if (details.name === subjectName) {
+          return ACCENT[details.accentKey] || null;
+        }
+      }
+      return null;
+    }
+
     function createEventCard(ev) {
       const card = document.createElement("div");
       card.className = "card now";
 
-      // Exams get Red (DS), others get Yellow (MAT)
-      const accent = ev.type === 'exam' ? ACCENT.DS : ACCENT.MAT;
+      // Use subject accent if available, otherwise fallback
+      const subAccent = subjectAccent(ev.subject);
+      const accent = subAccent || ACCENT.MAT;
       card.style.setProperty("--card-accent", accent[0]);
 
       // Save date data for the live tracker
@@ -106,6 +117,9 @@ async function initTimetableApp() {
       const tagLabel = typeCardLabels[ev.type] || 'Event';
       const shortLabel = typeShortLabels[ev.type] || ev.type.toUpperCase();
 
+      // Main heading: subject name if available, else event title
+      const mainHeading = ev.subject || ev.title;
+
       card.innerHTML = `
         <div class="card-main">
           <div class="card-time" style="flex-basis: 90px;">
@@ -115,7 +129,7 @@ async function initTimetableApp() {
           <div class="card-body">
             <div class="card-info">
               <span class="now-tag" style="background:${accent[0]}">${tagLabel}</span><br>
-              <p class="subj-name" style="margin-top:4px;">${ev.title}${ev.subject && ev.title !== ev.subject ? `<br><span style="font-size:13px;color:var(--ink-soft);font-weight:400;">${ev.subject}</span>` : ''}</p>
+              <p class="subj-name" style="margin-top:4px;">${mainHeading}</p>
               <div class="progress-wrap">
                 <div class="progress-track"><div class="progress-fill"></div></div>
                 <span class="progress-remaining" style="font-variant-numeric: tabular-nums; min-width: 90px;"></span>
@@ -299,9 +313,18 @@ async function initTimetableApp() {
 
     let currentDay = null;
     let isAnimating = false;
+    const h1El = document.querySelector("h1");
+    const originalH1 = h1El ? h1El.textContent : "Weekly Class Timetable";
 
     function selectDay(day){
       if(isAnimating) return;
+      // Update h1 for Exams tab
+      if (day === "Exams") {
+        const label = exams.length > 0 ? exams[0].title : "Exam Timetable";
+        h1El.textContent = label;
+      } else {
+        h1El.textContent = originalH1;
+      }
       document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.day === day));
       moveIndicator();
       if(day === currentDay) return;
