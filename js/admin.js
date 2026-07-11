@@ -168,17 +168,36 @@ function renderEventsList(events) {
     return;
   }
   listEl.innerHTML = '';
+
+  // Count exam events by title for "Delete All" option
+  const examTitleCount = {};
+  events.forEach(ev => {
+    if (ev.type === 'exam' && ev.title) {
+      examTitleCount[ev.title] = (examTitleCount[ev.title] || 0) + 1;
+    }
+  });
+
   events.forEach(ev => {
     const item = document.createElement('div');
     item.className = 'event-item';
     const displayTitle = ev.title || ev.subject || 'Untitled';
     const typeLabel = typeShortLabels[ev.type] || ev.type.toUpperCase();
+
+    const safeTitle = ev.title.replace(/'/g, "\\'");
+
+    let actionsHtml = `<button class="del-btn" onclick="deleteEvent('${safeTitle}', '${ev.date}')">Delete</button>`;
+
+    // Add "Delete All" button for exam events that have 2+ entries with same title
+    if (ev.type === 'exam' && examTitleCount[ev.title] > 1) {
+      actionsHtml += `<button class="del-btn" onclick="deleteSeries('${safeTitle}')" style="background:var(--ink-soft);margin-left:6px;">Delete All</button>`;
+    }
+
     item.innerHTML = `
       <div>
         <span style="font-weight: 700; font-size: 14px; display: block;">${displayTitle}</span>
         <span style="font-size: 12px; color: var(--ink-soft); text-transform: capitalize;">${ev.date} · ${typeLabel}</span>
       </div>
-      <button class="del-btn" onclick="deleteEvent('${ev.title.replace(/'/g, "\\'")}', '${ev.date}')">Delete</button>
+      <div style="display:flex;">${actionsHtml}</div>
     `;
     listEl.appendChild(item);
   });
@@ -284,6 +303,16 @@ window.deleteEvent = function(title, date) {
   }
   if (confirm(`Are you sure you want to delete '${title}'?`)) {
     sendToAPI({ password: pwdInput.value, action: 'delete', targetTitle: title, targetDate: date });
+  }
+};
+
+window.deleteSeries = function(title) {
+  if (!pwdInput.value) {
+    alert("Please enter the Admin Password at the top to unlock deletion.");
+    return;
+  }
+  if (confirm(`Delete ALL events in the series '${title}'? This cannot be undone.`)) {
+    sendToAPI({ password: pwdInput.value, action: 'delete_series', targetTitle: title });
   }
 };
 

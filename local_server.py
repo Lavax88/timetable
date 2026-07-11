@@ -97,6 +97,12 @@ class LocalHandler(http.server.SimpleHTTPRequestHandler):
                           if not (ev.get("title") == target_title and ev.get("date") == target_date)]
                 save_json(LOCAL_EVENTS_FILE, events)
 
+            elif action == "delete_series":
+                events = filter_expired_events(load_json(LOCAL_EVENTS_FILE) or [])
+                target_title = body.get("targetTitle")
+                events = [ev for ev in events if ev.get("title") != target_title]
+                save_json(LOCAL_EVENTS_FILE, events)
+
             elif action == "add_holiday":
                 holidays = load_json(LOCAL_HOLIDAYS_FILE) or []
                 date = body.get("holidayDate")

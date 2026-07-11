@@ -72,6 +72,11 @@ class handler(BaseHTTPRequestHandler):
                 data["EVENTS"] = [ev for ev in data["EVENTS"] if not (ev.get("title") == target_title and ev.get("date") == target_date)]
                 commit_message = f"Admin UI: Deleted event '{target_title}'"
 
+            elif action == "delete_series":
+                target_title = body.get("targetTitle")
+                data["EVENTS"] = [ev for ev in data["EVENTS"] if ev.get("title") != target_title]
+                commit_message = f"Admin UI: Deleted series '{target_title}'"
+
             elif action == "add_holiday":
                 date = body.get("holidayDate")
                 if date and date not in data["HOLIDAYS"]:
