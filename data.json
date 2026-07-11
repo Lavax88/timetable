@@ -298,12 +298,6 @@
       "PCCSL307 · PCCSL308"
     ]
   ],
-  "EVENTS": [
-    {
-      "title": "Reminder",
-      "date": "2026-07-12",
-      "type": "reminder"
-    }
-  ],
+  "EVENTS": [],
   "HOLIDAYS": []
 }
