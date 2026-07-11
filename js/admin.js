@@ -71,7 +71,20 @@ async function loadData() {
     console.error("Failed to load data.json", err);
   }
 }
+
+function setMinDates() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const min = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('date').setAttribute('min', min);
+  document.getElementById('holidayDate').setAttribute('min', min);
+  document.querySelectorAll('.series-date').forEach(el => el.setAttribute('min', min));
+}
+
 loadData();
+setMinDates();
 
 typeSelect.addEventListener('change', toggleEventType);
 toggleEventType();
