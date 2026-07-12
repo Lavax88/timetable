@@ -57,7 +57,7 @@ function populateSubjectSelect(sel, placeholder) {
 
 async function loadData() {
   try {
-    const res = await fetch('./data.json?v=' + new Date().getTime());
+    const res = await fetch('/api/data');
     const data = await res.json();
     window._subjects = data.SUBJECTS;
     window._holidays = data.HOLIDAYS || [];
