@@ -1,0 +1,181 @@
+/* ---------- Install Popup Overlay ---------- */
+.install-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.install-banner.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.install-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.install-card {
+  position: relative;
+  width: min(88vw, 380px);
+  padding: 28px 24px 20px;
+  border-radius: 24px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: 0 24px 64px var(--shadow-col);
+  transform: scale(0.88) translateY(24px);
+  transition: transform 0.4s cubic-bezier(.34,1.3,.4,1);
+  isolation: isolate;
+}
+
+.install-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--glass-specular) 0%, transparent 40%, transparent 60%, var(--glass-specular-dim) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.install-banner.visible .install-card {
+  transform: scale(1) translateY(0);
+}
+
+.install-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--card-time-bg);
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.install-close:hover {
+  background: var(--card-time-border);
+  transform: scale(1.1);
+}
+
+.install-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--toc-soft);
+  color: var(--toc);
+  margin-bottom: 16px;
+}
+
+.install-text {
+  margin-bottom: 20px;
+}
+
+.install-text strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.install-text span {
+  display: block;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.install-hint {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 14px !important;
+}
+
+.install-hint svg {
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.install-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--toc);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.install-btn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(110, 86, 207, 0.35);
+}
+
+.install-btn:active {
+  transform: scale(0.98);
+}
+
+.install-btn-secondary {
+  background: var(--ink-soft);
+}
+
+.install-btn-secondary:hover {
+  box-shadow: 0 6px 20px rgba(91, 85, 102, 0.35);
+}
+
+.install-link {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.2s ease;
+}
+
+.install-link:hover {
+  color: var(--ink);
+}
+
