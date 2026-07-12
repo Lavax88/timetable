@@ -163,10 +163,11 @@ async function initTimetableApp() {
         if (deadlines.length === 0) return;
         container.innerHTML = `<p class="legend-title" style="margin: 0 0 10px 4px;">Urgent Tasks</p>`;
         deadlines.forEach(ev => container.appendChild(createEventCard(ev)));
-        const sep = document.createElement('hr');
-        sep.style.cssText = 'border:none;border-top:1px solid var(--card-time-border);margin:20px 0 10px;';
-        container.appendChild(sep);
-        container.appendChild(document.createElement('br'));
+        const tt = document.createElement('p');
+        tt.className = 'legend-title';
+        tt.style.cssText = 'margin: 20px 0 10px 4px;';
+        tt.textContent = 'Timetable';
+        container.appendChild(tt);
       } catch (e) {
         console.error("renderUpcomingTasks error:", e);
       }
@@ -339,6 +340,9 @@ async function initTimetableApp() {
       } else {
         h1El.textContent = originalH1;
       }
+      // Hide urgent tasks when on Exams tab
+      const tasksEl = document.getElementById('upcomingTasks');
+      if (tasksEl) tasksEl.style.display = day === 'Exams' ? 'none' : '';
       document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.day === day));
       moveIndicator();
       if(day === currentDay) return;
