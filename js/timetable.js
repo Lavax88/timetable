@@ -19,7 +19,7 @@ function applyTheme(theme){
 /* ---------- Data Fetching & Initialization ---------- */
 async function initTimetableApp() {
   try {
-    const response = await fetch('./data.json?v=' + new Date().getTime(), { cache: 'no-store' });
+    const response = await fetch('./data.json?v=' + new Date().getTime());
     const data = await response.json();
 
     const ACCENT = data.ACCENT;

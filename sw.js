@@ -1,45 +1,46 @@
-const CACHE_NAME = 'timetable-cache-v0';
+const CACHE_NAME = 'timetable-cache-v1';
 
-// All the files your app needs to run offline
 const urlsToCache = [
   './',
   './index.html',
-  './css/style.css',
+  './css/index.css',
   './js/timetable.js',
-  './js/notifications.js',
   './manifest.json',
-  './logo.png',
-  './data.json'
+  './logo.png'
 ];
 
-// 1. Install Event: Cache all assets and force waiting worker to become active
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Forces the new service worker to activate immediately
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache:', CACHE_NAME);
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// 2. Fetch Event: Serve from cache first, then network
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Network-first for data.json (always fetch fresh, fall back to cache)
+  if (url.pathname.endsWith('/data.json') || url.pathname.endsWith('data.json')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first for everything else
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        // Return the cached version if found
-        if (response) {
-          return response;
-        }
-        // Otherwise, fetch it from the network
-        return fetch(event.request);
-      })
+      .then(response => response || fetch(event.request))
   );
 });
 
-// 3. Activate Event: Clean up old caches when you update the version number
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -47,10 +48,10 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => self.clients.claim())
+  );
 });
