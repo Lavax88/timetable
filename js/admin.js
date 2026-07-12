@@ -56,7 +56,7 @@ async function loadData() {
   try {
     const [dataRes, eventsRes] = await Promise.all([
       fetch('/api/data'),
-      fetch('/api/events')
+      fetch('/api/events?t=' + Date.now())
     ]);
     const data = await dataRes.json();
     let eventsData = { EVENTS: [], HOLIDAYS: [] };
