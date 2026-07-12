@@ -44,20 +44,6 @@ async function initTimetableApp() {
     const exams = upcomingEvents.filter(e => e.type === 'exam');
     const deadlines = upcomingEvents.filter(e => e.type !== 'exam');
 
-    // Render all upcoming non-exam events in dedicated section
-    (function renderUpcomingTasks() {
-      try {
-        const container = document.getElementById('upcomingTasks');
-        if (!container) return;
-        container.innerHTML = '';
-        if (deadlines.length === 0) return;
-        container.innerHTML = `<p class="legend-title" style="margin: 0 0 10px 4px;">Urgent Tasks</p>`;
-        deadlines.forEach(ev => container.appendChild(createEventCard(ev)));
-      } catch (e) {
-        console.error("renderUpcomingTasks error:", e);
-      }
-    })();
-
     function fmt(hhmm){
       const [h,m] = hhmm.split(":").map(Number);
       const period = h>=12 ? "PM":"AM";
@@ -154,6 +140,20 @@ async function initTimetableApp() {
       `;
       return card;
     }
+
+    // Render all upcoming non-exam events in dedicated section
+    (function renderUpcomingTasks() {
+      try {
+        const container = document.getElementById('upcomingTasks');
+        if (!container) return;
+        container.innerHTML = '';
+        if (deadlines.length === 0) return;
+        container.innerHTML = `<p class="legend-title" style="margin: 0 0 10px 4px;">Urgent Tasks</p>`;
+        deadlines.forEach(ev => container.appendChild(createEventCard(ev)));
+      } catch (e) {
+        console.error("renderUpcomingTasks error:", e);
+      }
+    })();
 
     const now = new Date();
     const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
