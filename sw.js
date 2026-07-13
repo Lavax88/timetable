@@ -6,6 +6,7 @@ const urlsToCache = [
   './css/index.css',
   './css/features.css',
   './js/timetable.js',
+  './js/features.js',
   './manifest.json',
   './logo.png'
 ];

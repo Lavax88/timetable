@@ -179,10 +179,27 @@
   color: var(--ink);
 }
 
-/* Firefox performance: disable heavy blob animations */
+/* Firefox performance: disable heavy blur/filter/animation (main lag source) */
 @supports (-moz-appearance: none) {
   .blob {
     animation: none !important;
+  }
+
+  header::before,
+  .tabs::before,
+  .card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .install-backdrop {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .install-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 
