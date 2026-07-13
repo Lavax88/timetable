@@ -1,4 +1,4 @@
-/* ---------- Theme ---------- */
+﻿/* ---------- Theme ---------- */
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -40,6 +40,20 @@ const typeShortLabels = {
   reminder: 'REMINDER'
 };
 
+function eventKey(ev) { return ev.title + '|' + ev.date; }
+function isEventCompleted(ev) {
+  try { return JSON.parse(localStorage.getItem('timetableCompleted') || '[]').indexOf(eventKey(ev)) >= 0; }
+  catch(e) { return false; }
+}
+function toggleEventComplete(ev) {
+  var key = eventKey(ev);
+  var arr = JSON.parse(localStorage.getItem('timetableCompleted') || '[]');
+  var idx = arr.indexOf(key);
+  if (idx >= 0) { arr.splice(idx, 1); } else { arr.push(key); }
+  localStorage.setItem('timetableCompleted', JSON.stringify(arr));
+  renderEvents();
+}
+
 function subjectAccent(subjectName) {
   if (!subjectName || !_SUBJECTS) return null;
   for (const details of Object.values(_SUBJECTS)) {
@@ -65,9 +79,19 @@ function createEventCard(ev) {
   const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
   const tagLabel = typeCardLabels[ev.type] || 'Event';
+  const completedLabels = { exam: 'Completed Exam', test: 'Completed Class Test', deadline: 'Completed Assignment', general: 'Completed Event', reminder: 'Completed Reminder' };
+  const canComplete = ev.type === 'deadline' || ev.type === 'reminder';
+  const completed = canComplete && isEventCompleted(ev);
+  const displayTag = completed ? '✓ ' + (completedLabels[ev.type] || tagLabel) : tagLabel;
   const shortLabel = typeShortLabels[ev.type] || ev.type.toUpperCase();
 
-  const mainHeading = ev.subject || ev.title;
+    let subjLabel = '';
+  if (ev.subject && _SUBJECTS) {
+    for (const d of Object.values(_SUBJECTS)) {
+      if (d.name === ev.subject) { subjLabel = d.chipLabel; break; }
+    }
+  }
+  const mainHeading = ev.title + (subjLabel ? ' (' + subjLabel + ')' : '');
 
   card.innerHTML = `
     <div class="card-main">
@@ -77,7 +101,7 @@ function createEventCard(ev) {
       </div>
       <div class="card-body">
         <div class="card-info">
-          <span class="now-tag" style="background:${accent[0]}">${tagLabel}</span><br>
+          <span class="now-tag" style="background:${accent[0]}">${displayTag}</span>${canComplete ? ' <button class="complete-btn">' + (completed ? '↩' : '✓') + '</button>' : ''}<br>
           <p class="subj-name" style="margin-top:4px;">${mainHeading}</p>
           <div class="progress-wrap">
             <div class="progress-track"><div class="progress-fill"></div></div>
@@ -87,7 +111,69 @@ function createEventCard(ev) {
       </div>
     </div>
   `;
+  if (canComplete) {
+    var btn = card.querySelector('.complete-btn');
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleEventComplete(ev);
+    });
+  }
   return card;
+}
+
+
+function injectCalendarBadges() {
+  document.querySelectorAll('.event-calendar-badge').forEach(el => el.remove());
+
+  const now = new Date();
+  const nowDay = now.getDay();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const nowDayName = dayNames[nowDay];
+
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((nowDay + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  const nextMonday = new Date(monday);
+  nextMonday.setDate(monday.getDate() + 7);
+
+  if (!_events || !_events.length) return;
+
+  _events.forEach(ev => {
+    if (!ev.subject) return;
+    const parts = ev.date.split('-').map(Number);
+    const evDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (evDate < monday || evDate >= nextMonday) return;
+
+    let subjectKey = null;
+    for (const [key, details] of Object.entries(_SUBJECTS)) {
+      if (details.name === ev.subject) {
+        subjectKey = key;
+        break;
+      }
+    }
+    if (!subjectKey) return;
+
+    const evDayName = dayNames[evDate.getDay()];
+    const panel = document.querySelector('.day-panel[data-day="' + evDayName + '"]');
+    if (!panel) return;
+
+    const cards = panel.querySelectorAll('.card[data-subject-key="' + subjectKey + '"]');
+    if (!cards.length) return;
+
+    const shortLabel = typeShortLabels[ev.type] || ev.type.toUpperCase();
+
+    cards.forEach(card => {
+      if (evDayName === nowDayName) {
+        const endMin = Number(card.dataset.endMin);
+        if (endMin && nowMinutes >= endMin) return;
+      }
+      const badge = document.createElement('div');
+      badge.className = 'event-calendar-badge';
+      badge.textContent = shortLabel + ': ' + ev.title;
+      card.querySelector('.subj-sub').after(badge);
+    });
+  });
 }
 
 /* ---------- Events Fetching & Rendering ---------- */
@@ -327,6 +413,7 @@ async function initTimetableApp() {
           card.dataset.startMin = minutesOf(start);
           card.dataset.endMin = minutesOf(end);
         }
+        card.dataset.subjectKey = key;
 
         card.innerHTML = `
           <div class="card-main">
@@ -549,15 +636,21 @@ async function initTimetableApp() {
           if(fill) fill.style.width = Math.min(100, pct) + "%";
         }
       });
+      injectCalendarBadges();
     }
+
 
     updateProgressBars();
 
     setInterval(updateProgressBars, 1000);
     setInterval(checkForDateChange, 30000);
+    injectCalendarBadges();
+
 
     /* ---------- Load events after timetable is ready ---------- */
     await loadEvents();
+    injectCalendarBadges();
+
 
   } catch (error) {
     console.error("Failed to load timetable data:", error);
