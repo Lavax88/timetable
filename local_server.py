@@ -8,6 +8,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE, "data.json")
 LOCAL_EVENTS_FILE = os.path.join(BASE, "events_local.json")
 LOCAL_HOLIDAYS_FILE = os.path.join(BASE, "holidays_local.json")
+LOCAL_SETTINGS_FILE = os.path.join(BASE, "settings_local.json")
 
 def load_original_data():
     with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -43,7 +44,7 @@ class LocalHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         clean_path = urllib.parse.urlparse(self.path).path
-        if clean_path == "/data.json":
+        if clean_path == "/data.json" or clean_path == "/api/data":
             self.serve_merged_data()
         elif clean_path == "/api/events":
             self.serve_events()
@@ -60,8 +61,10 @@ class LocalHandler(http.server.SimpleHTTPRequestHandler):
         data = load_original_data()
         local_events = filter_expired_events(load_json(LOCAL_EVENTS_FILE) or [])
         local_holidays = load_json(LOCAL_HOLIDAYS_FILE) or []
+        local_settings = load_json(LOCAL_SETTINGS_FILE) or {}
         data["EVENTS"] = local_events
         data["HOLIDAYS"] = local_holidays
+        data["SETTINGS"] = local_settings
         body = json.dumps(data, indent=2, ensure_ascii=False)
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -72,7 +75,8 @@ class LocalHandler(http.server.SimpleHTTPRequestHandler):
     def serve_events(self):
         local_events = filter_expired_events(load_json(LOCAL_EVENTS_FILE) or [])
         local_holidays = load_json(LOCAL_HOLIDAYS_FILE) or []
-        body = json.dumps({"EVENTS": local_events, "HOLIDAYS": local_holidays}, indent=2, ensure_ascii=False)
+        local_settings = load_json(LOCAL_SETTINGS_FILE) or {}
+        body = json.dumps({"EVENTS": local_events, "HOLIDAYS": local_holidays, "SETTINGS": local_settings}, indent=2, ensure_ascii=False)
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -127,6 +131,14 @@ class LocalHandler(http.server.SimpleHTTPRequestHandler):
                 date = body.get("holidayDate")
                 holidays = [d for d in holidays if d != date]
                 save_json(LOCAL_HOLIDAYS_FILE, holidays)
+
+            elif action == "update_settings":
+                settings = load_json(LOCAL_SETTINGS_FILE) or {}
+                settings.update(body.get("settings", {}))
+                save_json(LOCAL_SETTINGS_FILE, settings)
+
+            elif action == "clear_all":
+                save_json(LOCAL_EVENTS_FILE, [])
 
             self.send_json({"success": True})
         except Exception as e:
