@@ -4,154 +4,118 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard</title>
-  <link rel="icon" type="image/png" href="logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/index.css">
   <link rel="stylesheet" href="css/admin.css">
+  <script>
+    const savedTheme = localStorage.getItem("timetableTheme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", savedTheme ? savedTheme : (prefersDark ? "dark" : "light"));
+  </script>
 </head>
 <body>
-
-<div x-data="adminApp()" x-init="init()">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
 
   <div class="wrap">
-
-    <!-- Header -->
-    <header style="padding-top:40px">
+    <header>
       <div class="header-actions">
-        <a href="index.html" class="header-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center">🏠</a>
+        <a href="index.html" class="admin-toggle">🏠</a>
       </div>
-      <h1 style="font-size:28px">Admin Dashboard</h1>
+      <h1>Admin Dashboard</h1>
       <p class="eyebrow">KTU S3 CSE · Event Management</p>
     </header>
 
-    <!-- Event Builder Card -->
-    <div class="card" style="padding:20px;margin-bottom:20px">
-      <h2 style="font-size:17px;font-weight:600;margin:0 0 14px">Add Events</h2>
+    <div class="card" style="padding: 24px; margin-bottom: 24px;">
+      <h2 style="font-size: 18px; margin-top: 0;">Add Events</h2>
 
-      <!-- Lock Screen -->
-      <div id="lockScreen" x-show="!unlocked">
-        <p style="font-size:13px;color:var(--ink-soft);margin:0">Enter your admin password to manage events.</p>
-        <input type="password" x-model="password" placeholder="Admin Password" class="input-field" @keyup.enter="unlock">
-        <button class="btn btn-accent" @click="unlock" style="text-align:center">Unlock Dashboard</button>
+      <div id="lockScreen">
+        <p style="font-size: 13px; color: var(--ink-soft); margin: 0;">Enter your admin password to manage events.</p>
+        <input type="password" id="password" placeholder="Admin Password" required class="input-field">
+        <button id="unlockBtn" style="padding: 14px; background: var(--dal); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-family: inherit; cursor: pointer;">Unlock Dashboard</button>
       </div>
 
-      <!-- Event Builder (unlocked) -->
-      <div id="eventBuilder" x-show="unlocked" style="display:flex;flex-direction:column;gap:12px">
-        <p style="font-size:12px;color:var(--ink-soft);margin:0">Single events (test, deadline, general, reminder)</p>
-
-        <div id="normalFields" style="display:flex;flex-direction:column;gap:10px">
-          <div id="eventRows" style="display:flex;flex-direction:column;gap:10px">
-            <template x-for="(row, i) in eventRows" :key="row._id">
-              <div class="event-row">
-                <select class="input-field event-type" x-model="row.type">
-                  <option value="test">Test</option>
-                  <option value="deadline">Deadline</option>
-                  <option value="general">General</option>
-                  <option value="reminder">Reminder</option>
-                </select>
-                <select class="input-field event-subject" x-model="row.subject">
-                  <option value="">— No subject —</option>
-                  <template x-for="s in subjectOptions()" :key="s.key">
-                    <option :value="s.name" x-text="s.name"></option>
-                  </template>
-                </select>
-                <input type="text" class="input-field event-title" x-model="row.title" placeholder="Event Title">
-                <input type="date" class="input-field event-date" x-model="row.date">
-                <button type="button" class="remove-btn" @click="removeEventRow(row._id)" x-show="eventRows.length > 1">✕</button>
-              </div>
-            </template>
+      <div id="eventBuilder">
+        <p style="font-size:13px;color:var(--ink-soft);margin:0;">Single events (test, deadline, general, reminder)</p>
+        <div id="eventRows">
+          <div class="event-row">
+            <select class="input-field event-type">
+              <option value="test">Test</option>
+              <option value="deadline">Deadline</option>
+              <option value="general">General</option>
+              <option value="reminder">Reminder</option>
+            </select>
+            <select class="input-field event-subject">
+              <option value="" disabled selected>Loading subjects...</option>
+              <option value="">— No subject —</option>
+            </select>
+            <input type="text" class="input-field event-title" placeholder="Event Title" required>
+            <input type="date" class="input-field event-date" required>
+            <button type="button" class="event-remove-btn" style="display:none;">✕</button>
           </div>
-          <button type="button" class="add-row-btn" @click="addEventRow">+ Add Another Event</button>
         </div>
+        <button type="button" id="addEventRow" class="add-row-btn">+ Add Another Event</button>
 
-        <hr style="border:none;border-top:1px solid var(--separator);margin:6px 0">
+        <hr style="border:none;border-top:1px solid var(--card-time-border);margin:16px 0;">
 
-        <p style="font-size:12px;color:var(--ink-soft);margin:0">Exam series (one title, multiple dates)</p>
-        <input type="text" x-model="seriesGlobalName" class="input-field" placeholder="Series title (optional, defaults to subject name)">
-
-        <div id="seriesRows" style="display:flex;flex-direction:column;gap:10px">
-          <template x-for="(row, i) in seriesRows" :key="row._id">
-            <div class="series-row">
-              <select class="input-field series-subject" x-model="row.subject" required>
-                <option value="" disabled>Subject</option>
-                <template x-for="s in subjectOptions()" :key="s.key">
-                  <option :value="s.name" x-text="s.name"></option>
-                </template>
-              </select>
-              <input type="date" class="input-field series-date" x-model="row.date">
-              <button type="button" class="remove-btn" @click="removeSeriesRow(row._id)" x-show="seriesRows.length > 1">✕</button>
-            </div>
-          </template>
+        <p style="font-size:13px;color:var(--ink-soft);margin:0;">Exam series (one title, multiple dates)</p>
+        <input type="text" id="seriesGlobalName" class="input-field" placeholder="Series title (optional, defaults to subject name)">
+        <div id="seriesRows">
+          <div class="series-row">
+            <select class="input-field series-subject" required>
+              <option value="" disabled selected>Subject</option>
+            </select>
+            <input type="date" class="input-field series-date" required>
+            <button type="button" class="series-remove-btn" style="display: none;">✕</button>
+          </div>
         </div>
-        <button type="button" class="add-row-btn" @click="addSeriesRow">+ Add Another Date</button>
+        <button type="button" id="addSeriesRow" class="add-row-btn">+ Add Another Date</button>
 
-        <button class="btn btn-accent" @click="submitEvents" style="text-align:center;padding:14px;font-size:14px">Push All to Schedule</button>
+        <button type="button" id="submitEventsBtn" style="padding: 14px; background: var(--toc); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-family: inherit; cursor: pointer; margin-top: 16px;">Push All to Schedule</button>
       </div>
-
-      <p id="status" x-show="statusMsg" :style="{ color: statusType === 'danger' ? 'var(--ds)' : 'var(--oop)' }" x-text="statusMsg" style="margin-top:16px;font-weight:600;text-align:center;font-size:14px"></p>
+      <p id="status" style="margin-top: 16px; font-weight: 600; text-align: center; font-size: 14px;"></p>
     </div>
 
-    <!-- Active Events Card -->
-    <div class="card" style="padding:20px;margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h2 style="font-size:17px;font-weight:600;margin:0">Active Events</h2>
-        <button class="btn btn-danger" @click="clearAllEvents" style="font-size:12px">Clear All</button>
+    <div class="card" style="padding: 24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size: 18px; margin: 0;">Active Events</h2>
+        <div style="display:flex;gap:8px;">
+          <button id="deleteSelectedBtn" class="del-btn" style="display:none;">Delete Selected</button>
+          <button id="clearAllBtn" class="del-btn" style="background:var(--ds);">Clear All</button>
+        </div>
       </div>
-      <div id="eventsList" style="min-height:40px">
-        <div x-show="!activeEvents.length" style="color:var(--ink-soft);font-size:14px;padding:10px 0">No events yet.</div>
-        <template x-for="ev in activeEvents" :key="ev.title + ev.date">
-          <div class="event-item">
-            <div class="event-item-info">
-              <strong x-text="ev.title"></strong>
-              <span x-text="new Date(ev.date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })"></span>
-              <span style="display:inline-block;margin-left:8px;font-size:11px;font-weight:600;padding:1px 8px;border-radius:6px;background:var(--surface);"
-                    :style="`color: ${eventStatusColor(ev.type)}; background: ${eventStatusColor(ev.type)}15`"
-                    x-text="eventTypeLabel(ev.type)"></span>
-              <span x-show="ev.subject" style="color:var(--ink-faint);font-size:11px;margin-left:6px" x-text="'· ' + ev.subject"></span>
-            </div>
-            <button class="remove-btn" @click="deleteEvent(ev)">✕</button>
-          </div>
-        </template>
+      <div id="eventsList">
+        <p style="color: var(--ink-soft); font-size: 14px;">Loading existing events...</p>
       </div>
     </div>
 
-    <!-- Holidays Card -->
-    <div class="card" style="padding:20px;margin-bottom:20px">
-      <h2 style="font-size:17px;font-weight:600;margin:0 0 12px">Holidays</h2>
-      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 12px">On these dates the schedule is paused.</p>
-      <div id="holidayForm">
-        <input type="date" x-model="holidayDate" class="input-field">
-        <button class="btn btn-success" @click="addHoliday" style="white-space:nowrap">Add Holiday</button>
+    <div id="holidaysSection" class="card" style="padding: 24px; display: none;">
+      <h2 style="font-size: 18px; margin-top: 0; margin-bottom: 16px;">Holidays</h2>
+      <p style="font-size: 13px; color: var(--ink-soft); margin: 0 0 12px;">On these dates the schedule is paused.</p>
+      <div id="holidayForm" style="display: flex; gap: 10px; margin-bottom: 16px;">
+        <input type="date" id="holidayDate" class="input-field" style="flex: 1;">
+        <button id="addHolidayBtn" style="padding: 12px 20px; background: var(--ee); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap;">Add Holiday</button>
       </div>
       <div id="holidaysList">
-        <div x-show="!holidays.length" style="color:var(--ink-soft);font-size:14px">No holidays set.</div>
-        <template x-for="h in holidays" :key="h">
-          <div class="event-item" style="margin-top:6px">
-            <span x-text="new Date(h).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})" style="font-size:13px"></span>
-            <button class="remove-btn" @click="removeHoliday(h)">✕</button>
-          </div>
-        </template>
+        <p style="color: var(--ink-soft); font-size: 14px;">No holidays set.</p>
       </div>
     </div>
 
-    <!-- Exam Mode Card -->
-    <div class="card" style="padding:20px;margin-bottom:20px">
+    <div id="examToggleSection" class="card" style="padding: 24px; display: none;">
       <div class="exam-toggle-row">
         <div>
           <label>Force exam mode (testing)</label>
           <span class="hint">When enabled, all users see only the exam timetable regardless of date.</span>
         </div>
         <label class="toggle-switch">
-          <input type="checkbox" x-model="examModeEnabled" @change="toggleExamMode">
+          <input type="checkbox" id="examModeToggle">
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <p id="examModeStatus" style="font-size: 12px; color: var(--ink-soft); margin: 0;"></p>
     </div>
-
   </div>
-</div>
 
-<script src="js/admin.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" crossorigin="anonymous"></script>
-
+  <script src="js/admin.js"></script>
 </body>
 </html>
