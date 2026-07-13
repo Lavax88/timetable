@@ -135,7 +135,8 @@
       hideHeaderBtn();
     }
 
-    /* ---- Wire header button first — always, regardless of dismiss policy ---- */
+    /* ---- Wire all popup buttons — always, regardless of dismiss policy ---- */
+
     var headerBtn = document.getElementById('installHeaderBtn');
     if (headerBtn) {
       headerBtn.addEventListener('click', function () {
@@ -149,25 +150,7 @@
       });
     }
 
-    /* ---- Auto-popup ---- */
-    if (!shouldShowBanner()) return;
-
-    /* Don't auto-show on desktop browsers that can't install PWAs */
-    if (isIOS()) {
-      showIOSBanner();
-    } else if (supportsInstall()) {
-      showChromeBanner();
-      if (!deferredPrompt) {
-        var pollTimer = setInterval(function () {
-          if (deferredPrompt) clearInterval(pollTimer);
-        }, 400);
-        setTimeout(function () { clearInterval(pollTimer); }, 12000);
-      }
-    }
-
-    /* ---- Popup button wiring ---- */
-    var closeEls = ['closeBtn', 'dismissBtn', 'dismissIOSBtn', 'dismissUnsupportedBtn'];
-    closeEls.forEach(function (id) {
+    ['closeBtn', 'dismissBtn', 'dismissIOSBtn', 'dismissUnsupportedBtn'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) {
         el.addEventListener('click', function () {
@@ -202,6 +185,21 @@
       setInstallMeta({ installed: true, dismissCount: 0 });
       deferredPrompt = null;
     });
+
+    /* ---- Auto-popup ---- */
+    if (!shouldShowBanner()) return;
+
+    if (isIOS()) {
+      showIOSBanner();
+    } else if (supportsInstall()) {
+      showChromeBanner();
+      if (!deferredPrompt) {
+        var pollTimer = setInterval(function () {
+          if (deferredPrompt) clearInterval(pollTimer);
+        }, 400);
+        setTimeout(function () { clearInterval(pollTimer); }, 12000);
+      }
+    }
   }
 
   /* =====================================================================
