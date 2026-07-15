@@ -649,8 +649,32 @@ async function initTimetableApp() {
         }
       });
       injectCalendarBadges();
-    }
 
+      /* ---------- Break timer overlay ---------- */
+      const overlay = document.getElementById('breakOverlay');
+      const activeBreak = document.querySelector('.day-panel.active .card.break.now');
+      if (activeBreak) {
+        const endMin = Number(activeBreak.dataset.endMin);
+        const minsLeft = Math.max(0, Math.ceil(endMin - curMinutes));
+        document.getElementById('breakOverlayTime').textContent = minsLeft + ' min left';
+        
+        // Find next class after this break
+        const panel = activeBreak.closest('.day-panel');
+        let nextCard = activeBreak.nextElementSibling;
+        let nextSubject = '—';
+        while (nextCard) {
+          if (!nextCard.classList.contains('break')) {
+            const nameEl = nextCard.querySelector('.subj-name');
+            if (nameEl) { nextSubject = nameEl.textContent.trim(); break; }
+          }
+          nextCard = nextCard.nextElementSibling;
+        }
+        document.getElementById('breakOverlayNext').textContent = nextSubject;
+        if (overlay) overlay.style.display = '';
+      } else {
+        if (overlay) overlay.style.display = 'none';
+      }
+    }
 
     updateProgressBars();
 
