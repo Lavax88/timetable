@@ -658,9 +658,10 @@ async function initTimetableApp() {
       const breakCircleFill = document.querySelector('#breakOverlay .break-circle-fill');
       const breakNextEl = document.getElementById('breakOverlayNext');
       const panels = document.getElementById('panels');
+      const inExamMode = document.body.classList.contains('exam-mode');
       let breakActive = false;
 
-      if (_SCHEDULE) {
+      if (!inExamMode && _SCHEDULE) {
         const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
         const nowDayName = dayNames[t.getDay()];
         const rawPeriods = _SCHEDULE[nowDayName];
@@ -694,8 +695,8 @@ async function initTimetableApp() {
           }
         }
       }
-      if (overlay) overlay.style.display = breakActive ? '' : 'none';
-      if (panels) panels.style.display = breakActive ? 'none' : '';
+      if (overlay) overlay.style.display = (breakActive && !inExamMode) ? '' : 'none';
+      if (panels && !inExamMode) panels.style.display = breakActive ? 'none' : '';
     }
 
     updateProgressBars();
