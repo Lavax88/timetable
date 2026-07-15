@@ -555,4 +555,75 @@ footer{ text-align:center; margin-top:40px; font-size:12.5px; color:var(--ink-so
   .fac-chip{ font-size:11.5px; padding:6px 10px; }
 }
 
-
+/* ---------- Break timer overlay ---------- */
+#breakOverlay{
+  margin:0 0 14px;
+  padding:20px 24px;
+  border-radius:18px;
+  background:var(--card-bg, var(--glass));
+  border:1px solid var(--card-time-border, var(--glass-border));
+  box-shadow: 0 4px 20px var(--shadow-col);
+}
+.break-overlay-inner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  text-align:center;
+}
+.break-overlay-label{
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.break-circle-wrap{
+  position:relative;
+  width:120px;
+  height:120px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:4px 0;
+}
+.break-circle-svg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  transform:rotate(-90deg);
+}
+.break-circle-bg{
+  fill:none;
+  stroke:var(--card-time-bg);
+  stroke-width:3;
+}
+.break-circle-fill{
+  fill:none;
+  stroke:var(--card-accent, var(--ink));
+  stroke-width:3;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 1s linear;
+}
+.break-circle-time{
+  font-size:28px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-0.02em;
+  color:var(--ink);
+  line-height:1;
+}
+.break-overlay-next-label{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.10em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  margin-top:8px;
+}
+.break-overlay-next{
+  font-size:18px;
+  font-weight:700;
+  color:var(--ink);
+}

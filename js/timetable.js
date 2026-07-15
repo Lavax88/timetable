@@ -19,10 +19,21 @@ function applyTheme(theme){
 /* ---------- Globals ---------- */
 let _ACCENT = null;
 let _SUBJECTS = null;
+let _SCHEDULE = null;
 let _events = [];
 let _holidays = [];
 let _settings = {};
 let _lastCheckedDate = new Date().toDateString();
+
+/* ---------- Dev date override (DEV-ONLY, hostname-gated) ---------- */
+const IS_DEV = window.location.hostname === 'time-table-git-dev-cseb.vercel.app';
+function getDevNow() {
+  if (!IS_DEV) return new Date();
+  const stored = sessionStorage.getItem('timetableTestDate');
+  const storedAt = sessionStorage.getItem('timetableTestAt');
+  if (!stored || !storedAt) return new Date();
+  return new Date(new Date(stored).getTime() + (Date.now() - Number(storedAt)));
+}
 
 /* ---------- Event helpers ---------- */
 const typeCardLabels = {
@@ -257,6 +268,7 @@ async function initTimetableApp() {
 
     _ACCENT = data.ACCENT;
     _SUBJECTS = data.SUBJECTS;
+    _SCHEDULE = data.SCHEDULE;
     const SCHEDULE = data.SCHEDULE;
 
     const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday", "Exams"];
@@ -288,7 +300,7 @@ async function initTimetableApp() {
       return out;
     }
 
-    const now = new Date();
+    const now = getDevNow();
     const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const nowDayName = dayNames[now.getDay()];
     const nowMinutes = now.getHours()*60 + now.getMinutes();
@@ -581,7 +593,7 @@ async function initTimetableApp() {
 
     /* ---------- LIVE PROGRESS TRACKERS ---------- */
     function updateProgressBars(){
-      const t = new Date();
+      const t = getDevNow();
       const curMinutes = t.getHours() * 60 + t.getMinutes() + t.getSeconds() / 60;
 
       const classCards = document.querySelectorAll(".card.now[data-start-min]");
@@ -639,8 +651,53 @@ async function initTimetableApp() {
         }
       });
       injectCalendarBadges();
-    }
 
+      /* ---------- Break timer overlay (detects gaps between classes) ---------- */
+      const overlay = document.getElementById('breakOverlay');
+      const breakTimeEl = document.getElementById('breakOverlayTime');
+      const breakCircleFill = document.querySelector('#breakOverlay .break-circle-fill');
+      const breakNextEl = document.getElementById('breakOverlayNext');
+      const panels = document.getElementById('panels');
+      const inExamMode = document.body.classList.contains('exam-mode');
+      let breakActive = false;
+
+      if (!inExamMode && _SCHEDULE) {
+        const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const nowDayName = dayNames[t.getDay()];
+        const rawPeriods = _SCHEDULE[nowDayName];
+        if (rawPeriods && rawPeriods.length > 0) {
+          const isSaturday = nowDayName === 'Saturday';
+          const hasClass = isSaturday ? (Math.ceil(t.getDate() / 7) === 1 || Math.ceil(t.getDate() / 7) === 3) : true;
+          if (hasClass) {
+            for (let i = 0; i < rawPeriods.length - 1; i++) {
+              const currentEnd = minutesOf(rawPeriods[i][1]);
+              const nextStart = minutesOf(rawPeriods[i + 1][0]);
+              const gap = nextStart - currentEnd;
+              if (gap > 0 && curMinutes >= currentEnd && curMinutes < nextStart) {
+                breakActive = true;
+                const gapMins = nextStart - currentEnd;
+                const elapsedMins = curMinutes - currentEnd;
+                const pct = Math.min(100, Math.max(0, (elapsedMins / gapMins) * 100));
+                if(breakCircleFill){
+                  const circumference = 100;
+                  breakCircleFill.style.strokeDashoffset = circumference - (pct / 100) * circumference;
+                }
+                const totalSecs = Math.max(0, Math.round((nextStart - curMinutes) * 60));
+                const m = Math.floor(totalSecs / 60);
+                const s = totalSecs % 60;
+                breakTimeEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                const nextKey = rawPeriods[i + 1][2];
+                const nextSubj = _SUBJECTS && _SUBJECTS[nextKey] ? _SUBJECTS[nextKey].name : nextKey;
+                breakNextEl.textContent = nextSubj;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (overlay) overlay.style.display = (breakActive && !inExamMode) ? '' : 'none';
+      if (panels && !inExamMode) panels.style.display = breakActive ? 'none' : '';
+    }
 
     updateProgressBars();
 
@@ -653,12 +710,59 @@ async function initTimetableApp() {
     await loadEvents();
     injectCalendarBadges();
 
-
+    if (IS_DEV) setupDevDatePicker();
   } catch (error) {
     console.error("Failed to load timetable data:", error);
     document.getElementById("panels").innerHTML = `<div class="free-note">Error loading schedule. Please check your connection.<br><span style="font-size:12px;color:var(--ds);">${error.message || error}</span></div>`;
   }
 }
+
+/* ---------- Dev date picker (DEV-ONLY) ---------- */
+function setupDevDatePicker() {
+  const panel = document.getElementById('devPanel');
+  if (!panel) return;
+  panel.style.display = '';
+
+  const dateInput = document.getElementById('devDateInput');
+  const timeInput = document.getElementById('devTimeInput');
+  const resetBtn = document.getElementById('devDateReset');
+  const label = document.getElementById('devDateLabel');
+
+  const stored = sessionStorage.getItem('timetableTestDate');
+  if (stored) {
+    const d = new Date(stored);
+    dateInput.value = d.toISOString().slice(0, 10);
+    timeInput.value = d.toTimeString().slice(0, 5);
+    const diff = Date.now() - Number(sessionStorage.getItem('timetableTestAt'));
+    const totalSec = Math.floor(diff / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    label.textContent = 'Virtual time: ' + d.toLocaleString() + ' (running ' + (h ? h + 'h ' : '') + (m ? m + 'm ' : '') + s + 's ago)';
+  } else {
+    const now = new Date();
+    dateInput.valueAsDate = now;
+    timeInput.value = now.toTimeString().slice(0, 5);
+    label.textContent = 'Live mode. Set date/time below to test future schedule.';
+  }
+
+  dateInput.addEventListener('change', setDevDateTime);
+  timeInput.addEventListener('change', setDevDateTime);
+  resetBtn.addEventListener('click', () => {
+    sessionStorage.removeItem('timetableTestDate');
+    sessionStorage.removeItem('timetableTestAt');
+    location.reload();
+  });
+
+  function setDevDateTime() {
+    if (!dateInput.value || !timeInput.value) return;
+    const iso = dateInput.value + 'T' + timeInput.value + ':00';
+    sessionStorage.setItem('timetableTestDate', iso);
+    sessionStorage.setItem('timetableTestAt', String(Date.now()));
+    location.reload();
+  }
+}
+
 
 /* ---------- Exam Mode ---------- */
 function checkExamMode() {
