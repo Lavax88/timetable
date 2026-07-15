@@ -397,7 +397,7 @@ async function initTimetableApp() {
                   ${isBreakNow ? `<span class="now-tag break-now-tag">Ongoing break</span><br>` : ""}
                   <p class="subj-name">☕ Break</p>
                   <p class="subj-sub">${note} free</p>
-                  ${isBreakNow ? `<div class="progress-wrap"><div class="progress-track"><div class="progress-fill"></div></div><span class="progress-remaining"></span></div>` : ""}
+                  ${isBreakNow ? `<div class="circle-progress"><svg viewBox="0 0 36 36" class="circle-svg"><path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="circle-fill" stroke-dasharray="100 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg><span class="circle-label">00:00</span></div>` : ""}
                 </div>
               </div>
             </div>
@@ -439,7 +439,7 @@ async function initTimetableApp() {
                 ${isNow ? `<span class="now-tag">Ongoing lecture</span><br>` : ""}
                 <p class="subj-name">${subj.name}${extraNote ? ` <span style="font-weight:500;color:var(--ink-soft);font-size:13px;">(${extraNote})</span>` : ""}</p>
                 <p class="subj-sub">${subLine}</p>
-                ${isNow ? `<div class="progress-wrap"><div class="progress-track">${dividersHtml}<div class="progress-fill"></div></div><span class="progress-remaining"></span></div>` : ""}
+                ${isNow ? `<div class="circle-progress"><svg viewBox="0 0 36 36" class="circle-svg"><path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="circle-fill" stroke-dasharray="100 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg><span class="circle-label">00:00</span></div>` : ""}
               </div>
               <div class="fac-chip" style="background:${accent[1]}; color:${accent[0]};">${chipLabel}</div>
             </div>
@@ -600,22 +600,23 @@ async function initTimetableApp() {
       classCards.forEach(card => {
         const startMin = Number(card.dataset.startMin);
         const endMin = Number(card.dataset.endMin);
-        const total = endMin - startMin;
-        const elapsed = curMinutes - startMin;
-        const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+        const totalMins = endMin - startMin;
+        const elapsedMins = curMinutes - startMin;
+        const pct = Math.min(100, Math.max(0, (elapsedMins / totalMins) * 100));
 
-        const fill = card.querySelector(".progress-fill");
-        const remainingEl = card.querySelector(".progress-remaining");
-        if(fill) fill.style.width = pct + "%";
+        const circleFill = card.querySelector(".circle-fill");
+        const circleLabel = card.querySelector(".circle-label");
 
-        card.querySelectorAll(".progress-divider").forEach(d => {
-          const dividerPos = parseFloat(d.dataset.pos);
-          d.classList.toggle("passed", pct >= dividerPos);
-        });
+        if(circleFill){
+          const circumference = 100;
+          circleFill.style.strokeDashoffset = circumference - (pct / 100) * circumference;
+        }
 
-        if(remainingEl){
-          const minsLeft = Math.max(0, Math.ceil(endMin - curMinutes));
-          remainingEl.textContent = minsLeft <= 0 ? "Wrapping up" : `${minsToLabel(minsLeft)} left`;
+        if(circleLabel){
+          const totalSecs = Math.max(0, Math.round((endMin - curMinutes) * 60));
+          const m = Math.floor(totalSecs / 60);
+          const s = totalSecs % 60;
+          circleLabel.textContent = totalSecs <= 0 ? "Done" : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
       });
 
