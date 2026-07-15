@@ -356,10 +356,11 @@ async function initTimetableApp() {
 
       if(day === "Saturday"){
         const banner = document.createElement("div");
-        banner.className = "caution-banner";
         if(thisWeekHasNoSaturdayClass){
+          banner.className = "caution-banner";
           banner.textContent = "No classes this Saturday — classes only run on the 1st & 3rd Saturdays of the month.";
         } else {
+          banner.className = "caution-banner success";
           banner.textContent = "Saturday class is scheduled this week.";
         }
         panel.appendChild(banner);
