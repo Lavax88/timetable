@@ -1,4 +1,4 @@
-﻿/* ---------- Theme ---------- */
+/* ---------- Theme ---------- */
 const root = document.documentElement;
 const themeToggle = document.getElementById("themeToggle");
 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -368,10 +368,8 @@ async function initTimetableApp() {
           const isBreakNow = isClassDay && nowMinutes >= minutesOf(start) && nowMinutes < minutesOf(end);
           const card = document.createElement("div");
           card.className = "card break" + (isBreakNow ? " now" : "");
-          if(isBreakNow){
-            card.dataset.startMin = minutesOf(start);
-            card.dataset.endMin = minutesOf(end);
-          }
+          card.dataset.startMin = minutesOf(start);
+          card.dataset.endMin = minutesOf(end);
           card.innerHTML = `
             <div class="card-main">
               <div class="card-time">
@@ -409,11 +407,10 @@ async function initTimetableApp() {
         const card = document.createElement("div");
         card.className = "card" + (isNow ? " now" : "");
         card.style.setProperty("--card-accent", accent[0]);
-        if(isNow){
-          card.dataset.startMin = minutesOf(start);
-          card.dataset.endMin = minutesOf(end);
-        }
+        card.dataset.startMin = minutesOf(start);
+        card.dataset.endMin = minutesOf(end);
         card.dataset.subjectKey = key;
+        card.dataset.dividerCount = dividerCount;
 
         card.innerHTML = `
           <div class="card-main">
@@ -718,7 +715,7 @@ function checkForDateChange() {
 
 /* ---------- Auto-refresh events ---------- */
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { loadEvents(); checkForDateChange(); }
+  if (!document.hidden) { updateProgressBars(); checkForDateChange(); }
 });
 
 window.checkForDateChange = checkForDateChange;
@@ -737,3 +734,4 @@ document.getElementById('mainTitle').addEventListener('click', () => {
 });
 
 initTimetableApp();
+
