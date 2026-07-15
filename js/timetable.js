@@ -344,11 +344,15 @@ async function initTimetableApp() {
         return;
       }
 
-      if(day === "Saturday" && thisWeekHasNoSaturdayClass){
-        const caution = document.createElement("div");
-        caution.className = "caution-banner";
-        caution.innerHTML = `⚠️ No classes this Saturday — classes only run on the 1st &amp; 3rd Saturdays of the month.`;
-        panel.appendChild(caution);
+      if(day === "Saturday"){
+        const banner = document.createElement("div");
+        banner.className = "caution-banner";
+        if(thisWeekHasNoSaturdayClass){
+          banner.textContent = "No classes this Saturday — classes only run on the 1st & 3rd Saturdays of the month.";
+        } else {
+          banner.textContent = "Saturday class is scheduled this week.";
+        }
+        panel.appendChild(banner);
       }
 
       const rawPeriods = SCHEDULE[day];

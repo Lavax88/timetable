@@ -455,14 +455,10 @@ h1{
   font-size:13.5px;
   font-weight:600;
   line-height:1.4;
-  color:#7A5B00;
-  background:rgba(255,196,0,0.18);
-  border:1px solid rgba(255,196,0,0.45);
+  color:#155724;background:rgba(40,167,69,0.18);border:1px solid rgba(40,167,69,0.45);
 }
 [data-theme="dark"] .caution-banner{
-  color:#FFD866;
-  background:rgba(255,196,0,0.1);
-  border:1px solid rgba(255,196,0,0.3);
+  color:#8bda9a;background:rgba(40,167,69,0.1);border:1px solid rgba(40,167,69,0.3);
 }
 
 .legend-title{
