@@ -60,7 +60,20 @@ function toggleEventComplete(ev) {
   var key = eventKey(ev);
   var arr = JSON.parse(localStorage.getItem('timetableCompleted') || '[]');
   var idx = arr.indexOf(key);
-  if (idx >= 0) { arr.splice(idx, 1); } else { arr.push(key); }
+  var completing = idx < 0; // true = marking as done, false = undoing
+
+  if (completing) {
+    arr.push(key);
+    // Fire-and-forget: delete this event from the server (no password needed)
+    fetch('/api/complete_event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: ev.title, date: ev.date })
+    }).catch(() => {}); // silently ignore network errors
+  } else {
+    arr.splice(idx, 1);
+  }
+
   localStorage.setItem('timetableCompleted', JSON.stringify(arr));
   renderEvents();
 }
@@ -85,6 +98,16 @@ function createEventCard(ev) {
 
   card.dataset.eventDate = ev.date;
   card.dataset.eventType = ev.type;
+
+  // Resolve and store subject key so the progress bar can pinpoint the lecture start time
+  if (ev.subject && _SUBJECTS) {
+    for (const [k, details] of Object.entries(_SUBJECTS)) {
+      if (details.name === ev.subject) {
+        card.dataset.eventSubjectKey = k;
+        break;
+      }
+    }
+  }
 
   const d = new Date(ev.date);
   const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -623,9 +646,31 @@ async function initTimetableApp() {
       const eventCards = document.querySelectorAll(".card.now[data-event-date]");
       eventCards.forEach(card => {
         const evDate = new Date(card.dataset.eventDate);
+        const subjectKey = card.dataset.eventSubjectKey || '';
 
-        if (card.dataset.eventType === 'exam') evDate.setHours(9, 0, 0);
-        else evDate.setHours(23, 59, 59);
+        if (card.dataset.eventType === 'exam') {
+          evDate.setHours(9, 0, 0, 0);
+        } else if (subjectKey && _SCHEDULE) {
+          // Find the start time of this subject's class on the event's weekday
+          const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+          const evDayName = dayNames[evDate.getDay()];
+          const dayPeriods = _SCHEDULE[evDayName] || [];
+          let lectureStartMins = null;
+          for (const p of dayPeriods) {
+            if (p[2] === subjectKey) {
+              const [h, m] = p[0].split(':').map(Number);
+              lectureStartMins = h * 60 + m;
+              break;
+            }
+          }
+          if (lectureStartMins !== null) {
+            evDate.setHours(Math.floor(lectureStartMins / 60), lectureStartMins % 60, 0, 0);
+          } else {
+            evDate.setHours(23, 59, 59, 0); // subject not scheduled that day — fall back
+          }
+        } else {
+          evDate.setHours(23, 59, 59, 0);
+        }
 
         const diffMs = evDate - t;
         const fill = card.querySelector(".progress-fill");
